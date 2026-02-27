@@ -84,8 +84,6 @@ const VideoGenerator: React.FC<VideoGeneratorProps> = ({
       ? 'Sora'
       : modelRouting.family === 'doubao-task'
         ? 'Doubao Task'
-      : modelRouting.family === 'veo-sync'
-        ? 'Veo Sync'
         : modelRouting.family === 'veo-fast'
           ? 'Veo Fast'
           : 'Unknown';
@@ -93,9 +91,6 @@ const VideoGenerator: React.FC<VideoGeneratorProps> = ({
     const routing = resolveVideoModelRouting(modelId);
     if (routing.family === 'sora' || routing.family === 'doubao-task') {
       return '推荐网格分镜';
-    }
-    if (routing.family === 'veo-sync') {
-      return '推荐首尾帧';
     }
     if (routing.family === 'veo-fast') {
       return '网格/首尾帧';
@@ -182,7 +177,7 @@ const VideoGenerator: React.FC<VideoGeneratorProps> = ({
         >
           {videoModels.map((model) => {
             const vm = model as VideoModelDefinition;
-            const modeLabel = vm.params.mode === 'async' ? '异步' : '首尾帧';
+            const modeLabel = vm.params.mode === 'async' ? '异步' : '同步';
             const recommendationLabel = getRecommendedModeLabel(model.id);
             return (
               <option key={model.id} value={model.id}>
@@ -196,7 +191,7 @@ const VideoGenerator: React.FC<VideoGeneratorProps> = ({
             ✦ {selectedModel.name}: 
             {selectedModel.params.mode === 'async' 
               ? ` 支持 ${selectedModel.params.supportedAspectRatios.join('/')}，可选 ${selectedModel.params.supportedDurations.join('/')}秒`
-              : ` 首尾帧模式，支持 ${selectedModel.params.supportedAspectRatios.join('/')}`
+              : ` 同步模式，支持 ${selectedModel.params.supportedAspectRatios.join('/')}`
             }
             {` ｜${getRecommendedModeLabel(effectiveModelId || selectedModel.id)}`}
           </p>

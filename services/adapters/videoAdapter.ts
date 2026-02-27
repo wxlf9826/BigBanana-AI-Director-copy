@@ -1,6 +1,6 @@
 /**
  * 视频模型适配器
- * 处理 Veo（同步）和 Sora（异步）API
+ * 处理同步（chat/completions）和异步（/v1/videos）视频 API
  */
 
 import { VideoModelDefinition, VideoGenerateOptions, AspectRatio, VideoDuration } from '../../types/model';
@@ -99,35 +99,15 @@ const getSizeFromAspectRatio = (aspectRatio: AspectRatio): { width: number; heig
 };
 
 /**
- * 根据宽高比获取 Veo 模型名称
+ * 调用同步 chat/completions 视频 API
  */
-const getVeoModelName = (hasReferenceImage: boolean, aspectRatio: AspectRatio): string => {
-  const orientation = aspectRatio === '9:16' ? 'portrait' : 'landscape';
-  
-  if (hasReferenceImage) {
-    return `veo_3_1_i2v_s_fast_fl_${orientation}`;
-  } else {
-    return `veo_3_1_t2v_fast_${orientation}`;
-  }
-};
-
-/**
- * 调用 Veo API（同步模式）
- */
-const callVeoApi = async (
+const callSyncChatVideoApi = async (
   options: VideoGenerateOptions,
   model: VideoModelDefinition,
   apiKey: string,
   apiBase: string
 ): Promise<string> => {
-  const aspectRatio = options.aspectRatio || model.params.defaultAspectRatio;
-  const hasStartImage = !!options.startImage;
-  
-  // Veo 不支持 1:1
-  const finalAspectRatio = aspectRatio === '1:1' ? '16:9' : aspectRatio;
-  
-  // 获取具体的模型名称
-  const modelName = getVeoModelName(hasStartImage, finalAspectRatio);
+  const modelName = model.apiModel || model.id;
   
   // 清理图片数据
   const cleanStart = options.startImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, '') || '';
@@ -472,7 +452,7 @@ export const callVideoApi = async (
   if (activeModel.params.mode === 'async') {
     return callSoraApi(options, activeModel, apiKey, apiBase);
   } else {
-    return callVeoApi(options, activeModel, apiKey, apiBase);
+    return callSyncChatVideoApi(options, activeModel, apiKey, apiBase);
   }
 };
 

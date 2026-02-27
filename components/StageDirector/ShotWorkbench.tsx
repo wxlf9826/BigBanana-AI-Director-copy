@@ -302,9 +302,9 @@ const ShotWorkbench: React.FC<ShotWorkbenchProps> = ({
   const recommendationText =
     modelRouting.family === 'sora' || modelRouting.family === 'doubao-task'
       ? '当前模型推荐网格分镜'
-      : modelRouting.family === 'veo-sync'
-        ? '当前模型推荐首尾帧'
-        : '当前模型支持网格分镜与首尾帧';
+      : modelRouting.family === 'veo-fast'
+        ? '当前模型支持网格分镜与首尾帧'
+        : '当前模型可按镜头需求选择输入方式';
   const isGridGenerating = nineGrid?.status === 'generating_panels' || nineGrid?.status === 'generating_image';
   const openOrGenerateGridStoryboard = () => {
     if (

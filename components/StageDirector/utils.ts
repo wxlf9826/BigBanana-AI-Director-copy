@@ -32,7 +32,7 @@ export interface RefImagesResult {
   hasTurnaround: boolean;
 }
 
-export type VideoModelFamily = 'sora' | 'doubao-task' | 'veo-sync' | 'veo-fast' | 'unknown';
+export type VideoModelFamily = 'sora' | 'doubao-task' | 'veo-fast' | 'unknown';
 
 export interface VideoModelRouting {
   family: VideoModelFamily;
@@ -104,16 +104,6 @@ export const resolveVideoModelRouting = (videoModel: string): VideoModelRouting 
       supportsStartFrame: true,
       supportsEndFrame: true,
       prefersNineGridStoryboard: true,
-    };
-  }
-
-  if (id === 'veo' || id.startsWith('veo_')) {
-    return {
-      family: 'veo-sync',
-      normalizedModelId,
-      supportsStartFrame: true,
-      supportsEndFrame: true,
-      prefersNineGridStoryboard: false,
     };
   }
 
@@ -466,7 +456,7 @@ const fitVideoPromptLength = (input: string, maxChars: number = MAX_VIDEO_PROMPT
 export const buildVideoPrompt = (
   actionSummary: string,
   cameraMovement: string,
-  videoModel: 'sora-2' | 'veo' | 'veo_3_1-fast' | 'veo_3_1-fast-4K' | 'veo_3_1_t2v_fast_landscape' | 'veo_3_1_t2v_fast_portrait' | 'veo_3_1_i2v_s_fast_fl_landscape' | 'veo_3_1_i2v_s_fast_fl_portrait' | string,
+  videoModel: string,
   language: string,
   visualStyle: string,
   nineGrid?: NineGridData,

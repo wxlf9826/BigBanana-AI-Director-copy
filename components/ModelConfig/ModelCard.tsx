@@ -155,7 +155,7 @@ const ModelCard: React.FC<ModelCardProps> = ({
       <div className="text-[10px] text-[var(--text-muted)]">
         模式：{
           editParams.mode === 'sync'
-            ? '同步（Veo）'
+            ? '同步（Chat Completion）'
             : (model.endpoint || '').includes('/contents/generations/tasks')
               ? '异步（火山任务）'
               : '异步（Sora 类）'
@@ -164,14 +164,7 @@ const ModelCard: React.FC<ModelCardProps> = ({
     </div>
   );
 
-  const isAutoRoutedSyncVideoModel =
-    model.type === 'video' &&
-    model.params.mode === 'sync' &&
-    !model.apiModel &&
-    (model.endpoint || '').includes('/chat/completions');
-  const apiModelLabel = isAutoRoutedSyncVideoModel
-    ? '自动路由（无默认模型）'
-    : (model.apiModel || model.id);
+  const apiModelLabel = model.apiModel || model.id;
 
   return (
     <div 
@@ -198,7 +191,7 @@ const ModelCard: React.FC<ModelCardProps> = ({
             </div>
             <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">
               API 模型名: {apiModelLabel}
-              {!isAutoRoutedSyncVideoModel && model.id !== apiModelLabel && ` · 内部ID: ${model.id}`}
+              {model.id !== apiModelLabel && ` · 内部ID: ${model.id}`}
               {model.endpoint && ` · ${model.endpoint}`}
               {model.description && ` · ${model.description}`}
             </p>

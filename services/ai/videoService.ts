@@ -1,6 +1,6 @@
 /**
  * 视频生成服务
- * 包含 Veo（同步）和 Sora（异步）模式的视频生成
+ * 包含同步（chat/completions）和异步（/v1/videos、任务接口）模式
  */
 
 import { AspectRatio, VideoDuration } from "../../types";
@@ -13,7 +13,6 @@ import {
   parseHttpError,
   convertVideoUrlToBase64,
   resizeImageToSize,
-  getVeoModelName,
   getSoraVideoSize,
 } from './apiCore';
 
@@ -473,7 +472,7 @@ const generateVideoVolcengineTask = async (
 
 /**
  * 生成视频
- * 支持 Veo（同步）和 Sora（异步）两种模式
+ * 支持同步（chat/completions）和异步（/v1/videos、任务接口）两种模式
  */
 export const generateVideo = async (
   prompt: string,
@@ -526,18 +525,8 @@ export const generateVideo = async (
     );
   }
 
-  // Veo 模型使用同步模式
-  let actualModel = requestModel || resolvedVideoModelId || 'veo';
-  if (actualModel === 'veo' || actualModel.startsWith('veo_3_1')) {
-    const hasReferenceImage = !!startImageBase64;
-    actualModel = getVeoModelName(hasReferenceImage, aspectRatio);
-    console.log(`🎬 使用 Veo 首尾帧模式: ${actualModel} (${aspectRatio})`);
-  }
-
-  if (aspectRatio === '1:1' && actualModel.startsWith('veo_')) {
-    console.warn('⚠️ Veo 不支持方形视频 (1:1)，将使用横屏 (16:9)');
-    actualModel = getVeoModelName(!!startImageBase64, '16:9');
-  }
+  // 同步模式：直接使用模型配置中的请求模型名
+  const actualModel = requestModel || resolvedVideoModelId || 'sora-2';
 
   const messages: any[] = [
     { role: 'user', content: prompt }
