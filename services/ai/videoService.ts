@@ -484,11 +484,12 @@ export const generateVideo = async (
   duration: VideoDuration = 8
 ): Promise<string> => {
   const resolvedVideoModel = resolveModel('video', model);
-  const requestModel = resolveRequestModel('video', model) || model;
+  const resolvedVideoModelId = (resolvedVideoModel as any)?.id || model;
+  const requestModel = resolveRequestModel('video', model) || '';
   const apiKey = checkApiKey('video', model);
   const apiBase = getApiBase('video', model);
   const resolvedEndpoint = (resolvedVideoModel as any)?.endpoint || '';
-  const normalizedRequestModel = (requestModel || '').toLowerCase();
+  const normalizedRequestModel = (requestModel || resolvedVideoModelId || '').toLowerCase();
   const isVolcengineTaskMode =
     resolvedEndpoint.includes('/contents/generations/tasks') ||
     normalizedRequestModel.startsWith('doubao-seedance');
@@ -502,15 +503,15 @@ export const generateVideo = async (
       apiBase,
       aspectRatio,
       duration,
-      requestModel || VOLCENGINE_DEFAULT_MODEL,
+      requestModel || resolvedVideoModelId || VOLCENGINE_DEFAULT_MODEL,
       resolvedEndpoint || VOLCENGINE_TASK_DEFAULT_ENDPOINT
     );
   }
 
   const isAsyncMode =
     (resolvedVideoModel?.params as any)?.mode === 'async' ||
-    requestModel === 'sora-2' ||
-    requestModel.toLowerCase().startsWith('veo_3_1-fast');
+    normalizedRequestModel === 'sora-2' ||
+    normalizedRequestModel.startsWith('veo_3_1-fast');
 
   // 异步模式
   if (isAsyncMode) {
@@ -521,12 +522,12 @@ export const generateVideo = async (
       apiKey,
       aspectRatio,
       duration,
-      requestModel || 'sora-2'
+      requestModel || resolvedVideoModelId || 'sora-2'
     );
   }
 
   // Veo 模型使用同步模式
-  let actualModel = requestModel;
+  let actualModel = requestModel || resolvedVideoModelId || 'veo';
   if (actualModel === 'veo' || actualModel.startsWith('veo_3_1')) {
     const hasReferenceImage = !!startImageBase64;
     actualModel = getVeoModelName(hasReferenceImage, aspectRatio);

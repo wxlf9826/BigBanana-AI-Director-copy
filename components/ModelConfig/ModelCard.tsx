@@ -164,7 +164,14 @@ const ModelCard: React.FC<ModelCardProps> = ({
     </div>
   );
 
-  const apiModel = model.apiModel || model.id;
+  const isAutoRoutedSyncVideoModel =
+    model.type === 'video' &&
+    model.params.mode === 'sync' &&
+    !model.apiModel &&
+    (model.endpoint || '').includes('/chat/completions');
+  const apiModelLabel = isAutoRoutedSyncVideoModel
+    ? '自动路由（无默认模型）'
+    : (model.apiModel || model.id);
 
   return (
     <div 
@@ -190,8 +197,8 @@ const ModelCard: React.FC<ModelCardProps> = ({
               )}
             </div>
             <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">
-              API 模型名: {apiModel}
-              {model.id !== apiModel && ` · 内部ID: ${model.id}`}
+              API 模型名: {apiModelLabel}
+              {!isAutoRoutedSyncVideoModel && model.id !== apiModelLabel && ` · 内部ID: ${model.id}`}
               {model.endpoint && ` · ${model.endpoint}`}
               {model.description && ` · ${model.description}`}
             </p>

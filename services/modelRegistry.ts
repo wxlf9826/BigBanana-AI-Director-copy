@@ -56,6 +56,7 @@ export const loadRegistry = (): ModelRegistryState => {
     if (stored) {
       const parsed = JSON.parse(stored) as ModelRegistryState;
       const deprecatedVideoModelIds = [
+        'veo',
         'veo-3.1',
         'veo-r2v',
         'veo_3_0_r2v_fast_portrait',
@@ -149,7 +150,15 @@ export const loadRegistry = (): ModelRegistryState => {
         parsed.activeModels.video === 'veo_3_1' ||
         parsed.activeModels.video?.startsWith('veo_3_1_')
       ) {
-        parsed.activeModels.video = 'veo';
+        parsed.activeModels.video = 'veo_3_1-fast';
+        activeModelMigrated = true;
+      }
+
+      const activeVideoExists = parsed.models.some(
+        m => m.type === 'video' && m.id === parsed.activeModels.video && m.isEnabled
+      );
+      if (!activeVideoExists) {
+        parsed.activeModels.video = DEFAULT_ACTIVE_MODELS.video;
         activeModelMigrated = true;
       }
       
@@ -295,7 +304,9 @@ export const removeProvider = (id: string): boolean => {
  * 获取所有模型
  */
 export const getModels = (type?: ModelType): ModelDefinition[] => {
-  const models = loadRegistry().models;
+  const models = loadRegistry().models.filter(
+    m => !(m.type === 'video' && m.isBuiltIn && m.id === 'veo')
+  );
   if (type) {
     return models.filter(m => m.type === type);
   }

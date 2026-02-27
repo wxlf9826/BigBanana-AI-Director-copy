@@ -40,9 +40,9 @@ const DEFAULT_CONFIG: ModelConfig = {
   },
   videoModel: {
     providerId: 'antsk',
-    type: 'veo',
-    modelName: 'veo',
-    endpoint: '/v1/chat/completions'
+    type: 'sora',
+    modelName: 'sora-2',
+    endpoint: '/v1/videos'
   }
 };
 
@@ -74,18 +74,19 @@ export const loadModelConfig = (): ModelManagerState => {
       if (!hasDefaultProvider) {
         parsed.providers.unshift(DEFAULT_PROVIDER);
       }
-      // 迁移旧的 Veo 模型名为统一的 veo
+      // 迁移旧的 Veo 同步模型名到 Veo Fast（异步）
       const videoModelName = parsed.currentConfig?.videoModel?.modelName || '';
       if (
+        videoModelName === 'veo' ||
         videoModelName === 'veo-3.1' ||
         videoModelName === 'veo-r2v' ||
         videoModelName === 'veo_3_1' ||
         videoModelName.startsWith('veo_3_1_') ||
         videoModelName.startsWith('veo_3_0_r2v')
       ) {
-        parsed.currentConfig.videoModel.modelName = 'veo';
-        parsed.currentConfig.videoModel.type = 'veo';
-        parsed.currentConfig.videoModel.endpoint = '/v1/chat/completions';
+        parsed.currentConfig.videoModel.modelName = 'veo_3_1-fast';
+        parsed.currentConfig.videoModel.type = 'sora';
+        parsed.currentConfig.videoModel.endpoint = '/v1/videos';
         // 迁移后立即回写，避免重复执行
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed)); } catch (e) { /* ignore */ }
       }
@@ -403,7 +404,6 @@ export const AVAILABLE_IMAGE_MODELS = [
  * 预定义的视频模型列表
  */
 export const AVAILABLE_VIDEO_MODELS = [
-  { name: 'Veo 3.1（自动）', value: 'veo', type: 'veo' as const, description: '生成时自动按横竖屏与是否带图选择模型' },
   { name: 'Veo 3.1 Fast', value: 'veo_3_1-fast', type: 'sora' as const, description: '异步模式，支持横/竖屏，固定 8 秒' },
   { name: 'Sora-2', value: 'sora-2', type: 'sora' as const, description: '异步模式，支持 4/8/12 秒' },
 ];

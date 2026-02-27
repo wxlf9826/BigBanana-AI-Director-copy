@@ -58,11 +58,12 @@ const normalizeVideoModelIdForRouting = (videoModel: string): string => {
   }
 
   if (
+    normalized === 'veo' ||
     normalized === 'veo_3_1' ||
     normalized === 'veo-r2v' ||
     normalized.startsWith('veo_3_0_r2v')
   ) {
-    return 'veo';
+    return 'veo_3_1-fast';
   }
 
   return raw;

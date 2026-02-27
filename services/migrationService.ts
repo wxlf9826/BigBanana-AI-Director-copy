@@ -74,7 +74,9 @@ export async function runV2ToV3Migration(db: IDBDatabase): Promise<void> {
     try {
       if (legacy.shots) {
         legacy.shots.forEach((shot: any) => {
-          if (shot.videoModel === 'veo-r2v') shot.videoModel = 'veo';
+          if (shot.videoModel === 'veo-r2v' || shot.videoModel === 'veo') {
+            shot.videoModel = 'veo_3_1-fast';
+          }
         });
       }
       if (!legacy.renderLogs) legacy.renderLogs = [];

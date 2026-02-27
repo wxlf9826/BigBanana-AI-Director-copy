@@ -32,7 +32,18 @@ const VideoGenerator: React.FC<VideoGeneratorProps> = ({
 }) => {
   const normalizeModelId = (modelId?: string) => {
     if (!modelId) return modelId;
-    return modelId.toLowerCase() === 'veo_3_1-fast-4k' ? 'veo_3_1-fast' : modelId;
+    const normalized = modelId.toLowerCase();
+    if (normalized === 'veo_3_1-fast-4k') return 'veo_3_1-fast';
+    // Legacy Veo sync aliases are migrated to Veo Fast after removing Veo 3.1 sync preset.
+    if (
+      normalized === 'veo' ||
+      normalized === 'veo-r2v' ||
+      normalized === 'veo_3_1' ||
+      normalized.startsWith('veo_3_0_r2v')
+    ) {
+      return 'veo_3_1-fast';
+    }
+    return modelId;
   };
 
   const resolveVeoFastQuality = (modelId?: string): 'standard' | '4k' => {

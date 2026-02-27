@@ -339,17 +339,6 @@ export const BUILTIN_IMAGE_MODELS: ImageModelDefinition[] = [
  */
 export const BUILTIN_VIDEO_MODELS: VideoModelDefinition[] = [
   {
-    id: 'veo',
-    name: 'Veo 3.1 首尾帧',
-    type: 'video',
-    providerId: 'antsk',
-    endpoint: '/v1/chat/completions',
-    description: 'Veo 3.1 首尾帧模式，需要起始帧和结束帧',
-    isBuiltIn: true,
-    isEnabled: true,
-    params: { ...DEFAULT_VIDEO_PARAMS_VEO },
-  },
-  {
     id: 'veo_3_1-fast',
     name: 'Veo 3.1 Fast',
     type: 'video',

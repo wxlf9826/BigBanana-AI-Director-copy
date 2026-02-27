@@ -603,7 +603,13 @@ export const importIndexedDBData = async (
 
     if (payload.stores.projects && payload.stores.projects.length > 0 && !(payload.stores.episodes && payload.stores.episodes.length > 0)) {
       payload.stores.projects.forEach((p: any) => {
-        if (p.shots) p.shots.forEach((s: any) => { if (s.videoModel === 'veo-r2v') s.videoModel = 'veo'; });
+        if (p.shots) {
+          p.shots.forEach((s: any) => {
+            if (s.videoModel === 'veo-r2v' || s.videoModel === 'veo') {
+              s.videoModel = 'veo_3_1-fast';
+            }
+          });
+        }
         if (!p.renderLogs) p.renderLogs = [];
         if (p.scriptData && !p.scriptData.props) p.scriptData.props = [];
 
