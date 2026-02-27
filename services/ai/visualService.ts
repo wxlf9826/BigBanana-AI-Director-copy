@@ -434,7 +434,7 @@ Output ONLY the visual prompt text, no explanations.`;
  * 生成图像
  * 使用图像生成API，支持参考图像确保角色和场景一致性
  */
-type ReferencePackType = 'shot' | 'character' | 'scene' | 'prop';
+type ReferencePackType = 'shot' | 'character' | 'scene' | 'prop' | 'shape';
 type ImageModelRoutingFamily = 'nano-banana' | 'generic';
 
 const resolveImageModelRoutingFamily = (model: any): ImageModelRoutingFamily => {
@@ -486,6 +486,12 @@ const buildImageRoutingPrefix = (
     return `MODEL ROUTING: Nano Banana Pro - prop reference mode.
 - Preserve prop shape, materials, color, and distinguishing details.
 - Do not redesign key prop identity.`;
+  }
+
+  if (context.referencePackType === 'shape') {
+    return `MODEL ROUTING: Nano Banana Pro - shape reference mode.
+- Use references only for silhouette, proportions, and major geometry.
+- Do not copy rendering style, color grading, textures, or lighting from references.`;
   }
 
   return `MODEL ROUTING: Nano Banana Pro - shot reference mode.
@@ -785,6 +791,14 @@ Output one cinematic still image.`;
             return ['- All provided images are prop/item references.', '- Preserve object shape, color, materials, and distinguishing details.'];
           }
 
+          if (referencePackType === 'shape') {
+            return [
+              '- All provided images are shape/silhouette references only.',
+              '- Use references for contour, proportions, and key geometry anchors only.',
+              '- Ignore reference rendering style, color grading, textures, and lighting.'
+            ];
+          }
+
           const lines = [
             '- First image: scene/environment reference.',
             '- Next images: character references (base look or variation).',
@@ -801,17 +815,25 @@ Output one cinematic still image.`;
             ? 'scene/environment image'
             : referencePackType === 'prop'
               ? 'prop/item image'
-              : 'cinematic shot';
+              : referencePackType === 'shape'
+                ? 'style-controlled image with shape reference'
+                : 'cinematic shot';
         const sceneConsistencyRule = referencePackType === 'shot'
           ? 'Strictly preserve scene visual style, lighting logic, and environment continuity from references.'
           : referencePackType === 'scene'
             ? 'Strictly preserve scene layout, atmosphere, and lighting logic.'
+            : referencePackType === 'shape'
+              ? 'Use references only for silhouette and spatial geometry; style and lighting must follow textual prompt.'
             : 'Keep visual style and lighting coherent with prompt and references.';
         const characterConsistencyRule = referencePackType === 'character'
           ? 'Generated character must remain identical to references (face, hair, proportions, outfit details).'
+          : referencePackType === 'shape'
+            ? 'If characters appear, keep overall silhouette/proportions aligned with references but rely on prompt for style and materials.'
           : 'If characters appear, match referenced identity exactly (face, hair, proportions, signature details).';
         const propConsistencyRule = referencePackType === 'prop'
           ? 'Props/items must match references exactly (shape, material, color, details).'
+          : referencePackType === 'shape'
+            ? 'If props/items appear, preserve major shape cues from references while following prompt-defined style/material treatment.'
           : 'Referenced props/items in shot must match shape, material, color, and details.';
         const continuityGuide = continuityReferenceImage
           ? '- Last image is continuity reference; preserve transition continuity for identity, lighting, and spatial placement.'

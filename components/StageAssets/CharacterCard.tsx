@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Check, Shirt, Trash2, Edit2, AlertCircle, FolderPlus, Grid3x3, Link2 } from 'lucide-react';
+import { User, Check, Shirt, Trash2, Edit2, AlertCircle, FolderPlus, Grid3x3, Link2, Upload, X } from 'lucide-react';
 import { Character } from '../../types';
 import PromptEditor from './PromptEditor';
 import ImageUploadButton from './ImageUploadButton';
@@ -8,8 +8,11 @@ import InlineEditableText from './InlineEditableText';
 interface CharacterCardProps {
   character: Character;
   isGenerating: boolean;
+  shapeReferenceImage?: string;
   onGenerate: () => void;
   onUpload: (file: File) => void;
+  onUploadShapeReference: (file: File) => void;
+  onClearShapeReference: () => void;
   onPromptSave: (newPrompt: string) => void;
   onOpenWardrobe: () => void;
   onOpenTurnaround: () => void;
@@ -23,8 +26,11 @@ interface CharacterCardProps {
 const CharacterCard: React.FC<CharacterCardProps> = ({
   character,
   isGenerating,
+  shapeReferenceImage,
   onGenerate,
   onUpload,
+  onUploadShapeReference,
+  onClearShapeReference,
   onPromptSave,
   onOpenWardrobe,
   onOpenTurnaround,
@@ -35,6 +41,12 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
   onReplaceFromLibrary,
 }) => {
   const isLinked = !!character.libraryId;
+  const handleShapeReferenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    onUploadShapeReference(file);
+    e.target.value = '';
+  };
 
   return (
     <div className={`bg-[var(--bg-surface)] border rounded-xl overflow-hidden flex flex-col group transition-all hover:shadow-lg ${isLinked ? 'border-[var(--accent-border)] hover:border-[var(--accent)]' : 'border-[var(--border-primary)] hover:border-[var(--border-secondary)]'}`}>
@@ -211,6 +223,44 @@ const CharacterCard: React.FC<CharacterCardProps> = ({
             label="角色提示词"
             placeholder="输入角色的视觉描述..."
           />
+        </div>
+
+        <div className="mb-3 border border-[var(--border-primary)] rounded-lg p-2.5 bg-[var(--bg-elevated)]/40">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-mono text-[var(--text-tertiary)] uppercase tracking-wider">Shape Reference</span>
+            {shapeReferenceImage && (
+              <button
+                onClick={onClearShapeReference}
+                disabled={isGenerating}
+                className="text-[9px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-30"
+                title="Clear shape reference"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="px-2 py-1 bg-[var(--bg-hover)] border border-[var(--border-secondary)] rounded text-[9px] font-bold uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer flex items-center gap-1">
+              <Upload className="w-3 h-3" />
+              Upload Shape Ref
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleShapeReferenceChange}
+              />
+            </label>
+            <span className="text-[9px] text-[var(--text-muted)]">Shape only, style follows script</span>
+          </div>
+          {shapeReferenceImage && (
+            <button
+              onClick={() => onImageClick(shapeReferenceImage)}
+              className="mt-2 w-full flex items-center gap-2 p-2 rounded border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-colors text-left"
+            >
+              <img src={shapeReferenceImage} alt="Shape reference" className="w-10 h-10 rounded object-cover" />
+              <span className="text-[10px] text-[var(--text-secondary)]">Shape reference ready for next generation</span>
+            </button>
+          )}
         </div>
 
         <button

@@ -134,6 +134,7 @@ export interface Character {
   promptVersions?: PromptVersion[]; // Prompt edit history with rollback support
   negativePrompt?: string;
   coreFeatures?: string;
+  shapeReferenceImage?: string; // Optional reference image used only for shape/silhouette guidance during generation
   referenceImage?: string;
   turnaround?: CharacterTurnaroundData;
   variations: CharacterVariation[];
@@ -151,6 +152,7 @@ export interface Scene {
   visualPrompt?: string;
   promptVersions?: PromptVersion[]; // Prompt edit history with rollback support
   negativePrompt?: string; // 负面提示词，用于排除不想要的元素
+  shapeReferenceImage?: string; // Optional reference image used only for shape/silhouette guidance during generation
   referenceImage?: string; // 场景参考图，存储为base64格式（data:image/png;base64,...）
   status?: 'pending' | 'generating' | 'completed' | 'failed'; // 生成状态，用于loading状态持久化
   libraryId?: string;
@@ -170,6 +172,7 @@ export interface Prop {
   visualPrompt?: string;  // 视觉提示词
   promptVersions?: PromptVersion[]; // Prompt edit history with rollback support
   negativePrompt?: string; // 负面提示词，用于排除不想要的元素
+  shapeReferenceImage?: string; // Optional reference image used only for shape/silhouette guidance during generation
   referenceImage?: string; // 道具参考图，存储为base64格式（data:image/png;base64,...）
   status?: 'pending' | 'generating' | 'completed' | 'failed'; // 生成状态，用于loading状态持久化
   libraryId?: string;

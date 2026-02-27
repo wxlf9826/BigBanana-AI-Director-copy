@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, Check, Loader2, Trash2, Edit2, AlertCircle, FolderPlus } from 'lucide-react';
+import { Package, Check, Loader2, Trash2, Edit2, AlertCircle, FolderPlus, Upload, X } from 'lucide-react';
 import { Prop } from '../../types';
 import { PROP_CATEGORIES } from './constants';
 import PromptEditor from './PromptEditor';
@@ -9,8 +9,11 @@ import InlineEditableText from './InlineEditableText';
 interface PropCardProps {
   prop: Prop;
   isGenerating: boolean;
+  shapeReferenceImage?: string;
   onGenerate: () => void;
   onUpload: (file: File) => void;
+  onUploadShapeReference: (file: File) => void;
+  onClearShapeReference: () => void;
   onPromptSave: (newPrompt: string) => void;
   onImageClick: (imageUrl: string) => void;
   onDelete: () => void;
@@ -21,14 +24,24 @@ interface PropCardProps {
 const PropCard: React.FC<PropCardProps> = ({
   prop,
   isGenerating,
+  shapeReferenceImage,
   onGenerate,
   onUpload,
+  onUploadShapeReference,
+  onClearShapeReference,
   onPromptSave,
   onImageClick,
   onDelete,
   onUpdateInfo,
   onAddToLibrary,
 }) => {
+  const handleShapeReferenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    onUploadShapeReference(file);
+    e.target.value = '';
+  };
+
   return (
     <div className="bg-[var(--bg-surface)] border border-[var(--border-primary)] rounded-xl overflow-hidden flex flex-col group hover:border-[var(--border-secondary)] transition-all hover:shadow-lg">
       <div
@@ -153,6 +166,44 @@ const PropCard: React.FC<PropCardProps> = ({
             />
           </div>
         )}
+
+        <div className="mt-3 pt-3 border-t border-[var(--border-primary)]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-mono text-[var(--text-tertiary)] uppercase tracking-wider">Shape Reference</span>
+            {shapeReferenceImage && (
+              <button
+                onClick={onClearShapeReference}
+                disabled={isGenerating}
+                className="text-[9px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-30"
+                title="Clear shape reference"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="px-2 py-1 bg-[var(--bg-hover)] border border-[var(--border-secondary)] rounded text-[9px] font-bold uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer flex items-center gap-1">
+              <Upload className="w-3 h-3" />
+              Upload Shape Ref
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleShapeReferenceChange}
+              />
+            </label>
+            <span className="text-[9px] text-[var(--text-muted)]">Shape only, style follows script</span>
+          </div>
+          {shapeReferenceImage && (
+            <button
+              onClick={() => onImageClick(shapeReferenceImage)}
+              className="mt-2 w-full flex items-center gap-2 p-2 rounded border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-colors text-left"
+            >
+              <img src={shapeReferenceImage} alt="Shape reference" className="w-10 h-10 rounded object-cover" />
+              <span className="text-[10px] text-[var(--text-secondary)]">Shape reference ready for next generation</span>
+            </button>
+          )}
+        </div>
 
         <div className="mt-3 pt-3 border-t border-[var(--border-primary)]">
           <button

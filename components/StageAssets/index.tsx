@@ -286,6 +286,32 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
     void refreshLibrary();
   };
 
+  const setShapeReferenceImage = (
+    scriptData: NonNullable<ProjectState['scriptData']>,
+    type: 'character' | 'scene' | 'prop',
+    id: string,
+    image?: string
+  ): boolean => {
+    if (type === 'character') {
+      const target = scriptData.characters.find(c => compareIds(c.id, id));
+      if (!target) return false;
+      target.shapeReferenceImage = image;
+      return true;
+    }
+    if (type === 'scene') {
+      const target = scriptData.scenes.find(s => compareIds(s.id, id));
+      if (!target) return false;
+      target.shapeReferenceImage = image;
+      return true;
+    }
+    const target = (scriptData.props || []).find(p => compareIds(p.id, id));
+    if (!target) return false;
+    target.shapeReferenceImage = image;
+    return true;
+  };
+
+  const shapeReferenceStyleInstruction = `\n\nREFERENCE RULES: Use provided reference image ONLY for shape/silhouette/proportions/composition anchors. Do NOT copy the reference image's color grading, texture treatment, lighting style, or rendering medium.\nSTYLE LOCK: Final output MUST match the current project visual style (${visualStyle}).`;
+
   /**
    * 生成资源（角色或场景）
    */
@@ -312,16 +338,22 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
       let negativePrompt = "";
       let characterReferenceImages: string[] = [];
       let characterHasTurnaroundReference = false;
+      let shapeReferenceImage: string | undefined;
 
       if (type === 'character') {
         const char = scriptSnapshot.characters.find(c => compareIds(c.id, id));
         if (char) {
-          if (char.referenceImage) {
-            characterReferenceImages.push(char.referenceImage);
-          }
-          if (char.turnaround?.status === 'completed' && char.turnaround.imageUrl && !characterReferenceImages.includes(char.turnaround.imageUrl)) {
-            characterReferenceImages.push(char.turnaround.imageUrl);
-            characterHasTurnaroundReference = true;
+          shapeReferenceImage = char.shapeReferenceImage;
+          if (shapeReferenceImage) {
+            characterReferenceImages.push(shapeReferenceImage);
+          } else {
+            if (char.referenceImage) {
+              characterReferenceImages.push(char.referenceImage);
+            }
+            if (char.turnaround?.status === 'completed' && char.turnaround.imageUrl && !characterReferenceImages.includes(char.turnaround.imageUrl)) {
+              characterReferenceImages.push(char.turnaround.imageUrl);
+              characterHasTurnaroundReference = true;
+            }
           }
 
           if (char.visualPrompt) {
@@ -355,6 +387,7 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
       } else {
         const scene = scriptSnapshot.scenes.find(s => compareIds(s.id, id));
         if (scene) {
+          shapeReferenceImage = scene.shapeReferenceImage;
           if (scene.visualPrompt) {
             prompt = scene.visualPrompt;
             negativePrompt = scene.negativePrompt || '';
@@ -394,25 +427,35 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
         enhancedPrompt += '. IMPORTANT: This is a pure environment/background scene with absolutely NO people, NO human figures, NO characters, NO silhouettes, NO crowds - empty scene only.';
       }
 
+      if (shapeReferenceImage) {
+        enhancedPrompt += shapeReferenceStyleInstruction;
+      }
+
       // 鐢熸垚鍥剧墖锛堜娇鐢ㄩ€夋嫨鐨勬í绔栧睆姣斾緥锛?
-      if (type === 'character' && characterReferenceImages.length > 0) {
+      if (type === 'character' && characterReferenceImages.length > 0 && !shapeReferenceImage) {
         enhancedPrompt += '\n\nIMPORTANT IDENTITY LOCK: Use the provided references as the same character identity anchor. Keep face, hairstyle, body proportions, outfit materials, and signature accessories consistent. Do NOT redesign this character.';
         if (characterHasTurnaroundReference) {
           enhancedPrompt += ' If a 3x3 turnaround sheet is included, prioritize the panel that matches the camera angle and preserve angle-specific details.';
         }
       }
 
-      const referenceImagesForGeneration = type === 'character' ? characterReferenceImages : [];
+      const referenceImagesForGeneration = shapeReferenceImage
+        ? [shapeReferenceImage]
+        : type === 'character'
+          ? characterReferenceImages
+          : [];
       const imageUrl = await generateImage(
         enhancedPrompt,
         referenceImagesForGeneration,
         aspectRatio,
         false,
-        type === 'character' ? characterHasTurnaroundReference : false,
+        type === 'character' && !shapeReferenceImage ? characterHasTurnaroundReference : false,
         negativePrompt,
-        type === 'character'
-          ? { referencePackType: 'character' }
-          : { referencePackType: 'scene' }
+        shapeReferenceImage
+          ? { referencePackType: 'shape' }
+          : type === 'character'
+            ? { referencePackType: 'character' }
+            : { referencePackType: 'scene' }
       );
 
       // 鏇存柊鐘舵€?
@@ -534,6 +577,38 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
     } catch (e: any) {
       showAlert(e.message, { type: 'error' });
     }
+  };
+
+  const handleUploadShapeReferenceImage = async (
+    type: 'character' | 'scene' | 'prop',
+    id: string,
+    file: File
+  ) => {
+    try {
+      const base64 = await handleImageUpload(file);
+      updateProject(prev => {
+        if (!prev.scriptData) return prev;
+        const newData = cloneScriptData(prev.scriptData);
+        setShapeReferenceImage(newData, type, id, base64);
+        return { ...prev, scriptData: newData };
+      });
+      showAlert('已设置形状参考图。生成时将保持当前剧本风格，仅参考轮廓和比例。', { type: 'success' });
+    } catch (e: any) {
+      showAlert(e.message, { type: 'error' });
+    }
+  };
+
+  const handleClearShapeReferenceImage = (
+    type: 'character' | 'scene' | 'prop',
+    id: string
+  ) => {
+    updateProject(prev => {
+      if (!prev.scriptData) return prev;
+      const newData = cloneScriptData(prev.scriptData);
+      const updated = setShapeReferenceImage(newData, type, id, undefined);
+      if (!updated) return prev;
+      return { ...prev, scriptData: newData };
+    });
   };
 
   const handleAddCharacterToLibrary = (char: Character) => {
@@ -955,6 +1030,7 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
       if (!prop) return;
 
       let prompt = '';
+      const shapeReferenceImage = prop.shapeReferenceImage;
       let negativePrompt = prop.negativePrompt || '';
       if (prop.visualPrompt) {
         prompt = prop.visualPrompt;
@@ -993,15 +1069,20 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
 
       // Prop image: enforce object-only shot without human figures.
       prompt += '. IMPORTANT: This is a standalone prop/item shot with absolutely NO people, NO human figures, NO characters - object only on clean/simple background.';
+      if (shapeReferenceImage) {
+        prompt += shapeReferenceStyleInstruction;
+      }
 
       const imageUrl = await generateImage(
         prompt,
-        [],
+        shapeReferenceImage ? [shapeReferenceImage] : [],
         aspectRatio,
         false,
         false,
         negativePrompt,
-        { referencePackType: 'prop' }
+        shapeReferenceImage
+          ? { referencePackType: 'shape' }
+          : { referencePackType: 'prop' }
       );
 
       // 鏇存柊鐘舵€?
@@ -1776,8 +1857,11 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
                 key={char.id}
                 character={char}
                 isGenerating={char.status === 'generating'}
+                shapeReferenceImage={char.shapeReferenceImage}
                 onGenerate={() => handleGenerateAsset('character', char.id)}
                 onUpload={(file) => handleUploadCharacterImage(char.id, file)}
+                onUploadShapeReference={(file) => handleUploadShapeReferenceImage('character', char.id, file)}
+                onClearShapeReference={() => handleClearShapeReferenceImage('character', char.id)}
                 onPromptSave={(newPrompt) => handleSaveCharacterPrompt(char.id, newPrompt)}
                 onOpenWardrobe={() => setSelectedCharId(char.id)}
                 onOpenTurnaround={() => setTurnaroundCharId(char.id)}
@@ -1845,8 +1929,11 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
                 key={scene.id}
                 scene={scene}
                 isGenerating={scene.status === 'generating'}
+                shapeReferenceImage={scene.shapeReferenceImage}
                 onGenerate={() => handleGenerateAsset('scene', scene.id)}
                 onUpload={(file) => handleUploadSceneImage(scene.id, file)}
+                onUploadShapeReference={(file) => handleUploadShapeReferenceImage('scene', scene.id, file)}
+                onClearShapeReference={() => handleClearShapeReferenceImage('scene', scene.id)}
                 onPromptSave={(newPrompt) => handleSaveScenePrompt(scene.id, newPrompt)}
                 onImageClick={setPreviewImage}
                 onDelete={() => handleDeleteScene(scene.id)}
@@ -1918,8 +2005,11 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
                   key={prop.id}
                   prop={prop}
                   isGenerating={prop.status === 'generating'}
+                  shapeReferenceImage={prop.shapeReferenceImage}
                   onGenerate={() => handleGeneratePropAsset(prop.id)}
                   onUpload={(file) => handleUploadPropImage(prop.id, file)}
+                  onUploadShapeReference={(file) => handleUploadShapeReferenceImage('prop', prop.id, file)}
+                  onClearShapeReference={() => handleClearShapeReferenceImage('prop', prop.id)}
                   onPromptSave={(newPrompt) => handleSavePropPrompt(prop.id, newPrompt)}
                   onImageClick={setPreviewImage}
                   onDelete={() => handleDeleteProp(prop.id)}
