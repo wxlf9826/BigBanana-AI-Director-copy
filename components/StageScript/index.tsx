@@ -14,6 +14,7 @@ import {
   setScriptLogCallback,
   clearScriptLogCallback,
   logScriptProgress,
+  inferVisualStyleFromImage,
 } from '../../services/aiService';
 import { getFinalValue, validateConfig } from './utils';
 import { DEFAULTS, SCRIPT_SOFT_LIMIT, SCRIPT_HARD_LIMIT } from './constants';
@@ -310,6 +311,7 @@ const StageScript: React.FC<Props> = ({ project, updateProject, onShowModelConfi
   const [isProcessing, setIsProcessing] = useState(false);
   const [isContinuing, setIsContinuing] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
+  const [isInferringVisualStyle, setIsInferringVisualStyle] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processingMessage, setProcessingMessage] = useState('');
   const [processingLogs, setProcessingLogs] = useState<string[]>([]);
@@ -345,13 +347,14 @@ const StageScript: React.FC<Props> = ({ project, updateProject, onShowModelConfi
     setRewriteInstruction('');
     setSelectionRange(null);
     setLastRewriteSnapshot(null);
+    setIsInferringVisualStyle(false);
   }, [project.id]);
 
   // 上报生成状态给父组件，用于导航锁定
   useEffect(() => {
-    const generating = isProcessing || isContinuing || isRewriting;
+    const generating = isProcessing || isContinuing || isRewriting || isInferringVisualStyle;
     onGeneratingChange?.(generating);
-  }, [isProcessing, isContinuing, isRewriting]);
+  }, [isProcessing, isContinuing, isRewriting, isInferringVisualStyle]);
 
   // 组件卸载时重置生成状态
   useEffect(() => {
@@ -424,6 +427,58 @@ const StageScript: React.FC<Props> = ({ project, updateProject, onShowModelConfi
     project.visualStyle,
     updateProject
   ]);
+
+  const fileToDataUrl = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.readAsDataURL(file);
+  });
+
+  const handleInferVisualStyleByImage = async (file: File) => {
+    if (isInferringVisualStyle || isProcessing || isContinuing || isRewriting) {
+      return;
+    }
+    const finalModel = getFinalValue(localModel, customModelInput);
+
+    if (!finalModel) {
+      setError('Please choose or input a chat model first.');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file (PNG/JPG/WebP).');
+      return;
+    }
+
+    setIsInferringVisualStyle(true);
+    setError(null);
+
+    try {
+      const imageDataUrl = await fileToDataUrl(file);
+      const result = await inferVisualStyleFromImage(
+        imageDataUrl,
+        finalModel,
+        localLanguage
+      );
+
+      const inferredPrompt = String(result.stylePrompt || result.styleLabel || '').trim();
+      if (!inferredPrompt) {
+        throw new Error('empty style prompt returned');
+      }
+      setLocalVisualStyle('custom');
+      setCustomStyleInput(inferredPrompt);
+
+      const confidenceText = typeof result.confidence === 'number'
+        ? `（置信度 ${(result.confidence * 100).toFixed(0)}%）`
+        : '';
+      showAlert(`风格提示词已生成${confidenceText}`, { type: 'success' });
+    } catch (err: any) {
+      console.error(err);
+      setError(`Style inference failed: ${err?.message || 'request failed'}`);
+    } finally {
+      setIsInferringVisualStyle(false);
+    }
+  };
 
   const handleAnalyze = async () => {
     const finalDuration = getFinalValue(localDuration, customDurationInput);
@@ -1401,6 +1456,7 @@ const StageScript: React.FC<Props> = ({ project, updateProject, onShowModelConfi
             customModelInput={customModelInput}
             customStyleInput={customStyleInput}
             isProcessing={isProcessing}
+            isInferringVisualStyle={isInferringVisualStyle}
             error={error}
             onShowModelConfig={onShowModelConfig}
             onTitleChange={setLocalTitle}
@@ -1411,6 +1467,7 @@ const StageScript: React.FC<Props> = ({ project, updateProject, onShowModelConfi
             onCustomDurationChange={setCustomDurationInput}
             onCustomModelChange={setCustomModelInput}
             onCustomStyleChange={setCustomStyleInput}
+            onInferVisualStyleByImage={handleInferVisualStyleByImage}
             enableQualityCheck={enableQualityCheck}
             onToggleQualityCheck={setEnableQualityCheck}
             onAnalyze={handleAnalyze}

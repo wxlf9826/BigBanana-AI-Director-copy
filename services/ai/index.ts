@@ -50,6 +50,7 @@ export {
   parseScriptStructure,
   enrichScriptDataVisuals,
   parseScriptToData,
+  inferVisualStyleFromImage,
   generateShotList,
   continueScript,
   continueScriptStream,
@@ -57,6 +58,7 @@ export {
   rewriteScriptStream,
   rewriteScriptSegment,
   rewriteScriptSegmentStream,
+  type VisualStyleInferenceResult,
 } from './scriptService';
 
 // 视觉资产生成服务

@@ -21,6 +21,10 @@ import {
   cleanJsonString,
   chatCompletion,
   chatCompletionStream,
+  checkApiKey,
+  getApiBase,
+  resolveRequestModel,
+  parseHttpError,
   getActiveVideoModel,
   logScriptProgress,
 } from './apiCore';
@@ -45,6 +49,289 @@ export { setScriptLogCallback, clearScriptLogCallback, logScriptProgress } from 
  * Agent 1: Script Structuring
  * 解析原始文本为结构化剧本数据（不包含视觉提示词生成）
  */
+type PresetVisualStyleKey =
+  | 'anime'
+  | '2d-animation'
+  | '3d-animation'
+  | 'cyberpunk'
+  | 'oil-painting'
+  | 'live-action';
+
+const PRESET_VISUAL_STYLE_SET = new Set<PresetVisualStyleKey>([
+  'anime',
+  '2d-animation',
+  '3d-animation',
+  'cyberpunk',
+  'oil-painting',
+  'live-action',
+]);
+
+const PRESET_VISUAL_STYLE_LABELS: Record<PresetVisualStyleKey, string> = {
+  'anime': 'Anime',
+  '2d-animation': '2D Animation',
+  '3d-animation': '3D Animation',
+  'cyberpunk': 'Cyberpunk',
+  'oil-painting': 'Oil Painting',
+  'live-action': 'Live Action',
+};
+
+const normalizeStyleKey = (raw: string): PresetVisualStyleKey | 'custom' => {
+  const normalized = String(raw || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-');
+
+  if (!normalized) return 'custom';
+  if (PRESET_VISUAL_STYLE_SET.has(normalized as PresetVisualStyleKey)) {
+    return normalized as PresetVisualStyleKey;
+  }
+
+  const compact = normalized.replace(/-/g, '');
+  if (compact === '2d' || normalized.includes('2d')) return '2d-animation';
+  if (compact === '3d' || normalized.includes('3d') || normalized.includes('cgi')) return '3d-animation';
+  if (normalized.includes('anime') || normalized.includes('manga')) return 'anime';
+  if (normalized.includes('cyberpunk')) return 'cyberpunk';
+  if (normalized.includes('oil')) return 'oil-painting';
+  if (normalized.includes('live') || normalized.includes('realistic') || normalized.includes('photo')) {
+    return 'live-action';
+  }
+
+  return 'custom';
+};
+
+const toChatMessageText = (content: unknown): string => {
+  if (typeof content === 'string') {
+    return content.trim();
+  }
+  if (!Array.isArray(content)) {
+    return '';
+  }
+  return content
+    .map((item: any) => {
+      if (typeof item === 'string') return item;
+      if (item && typeof item === 'object') {
+        if (typeof item.text === 'string') return item.text;
+        if (typeof item.content === 'string') return item.content;
+      }
+      return '';
+    })
+    .join('\n')
+    .trim();
+};
+
+const normalizeImageInput = (image: string): string => {
+  const trimmed = String(image || '').trim();
+  if (!trimmed) {
+    throw new Error('Image input is empty');
+  }
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:image/')) {
+    return trimmed;
+  }
+  const clean = trimmed.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/i, '');
+  return `data:image/png;base64,${clean}`;
+};
+
+const sanitizeStylePrompt = (raw: string): string => {
+  const fallback = String(raw || '').replace(/\s+/g, ' ').trim();
+  if (!fallback) return '';
+
+  // Keep style phrase only: cut at sentence separators first.
+  let value = fallback.split(/[;；。.!！？\n\r]+/)[0]?.trim() || fallback;
+
+  // Remove bracketed details like "(DOF, soft lighting)".
+  value = value.replace(/[（(][^()（）]{0,80}[)）]/g, ' ');
+
+  // Remove common quality/camera/scene control terms from style prompt.
+  const removablePatterns: RegExp[] = [
+    /\b(?:4k|8k|2k|uhd|fhd|hdr|1080p|720p|high[-\s]?res(?:olution)?)\b/gi,
+    /\b(?:cinematic|lighting|global illumination|depth of field|dof|bokeh|camera|lens|shot|composition|scene|background)\b/gi,
+    /(电影级|光照|全局光照|景深|虚化|构图|镜头|场景|背景|分辨率|细节清晰|材质|定帧感)/g,
+  ];
+
+  for (const pattern of removablePatterns) {
+    value = value.replace(pattern, ' ');
+  }
+
+  value = value
+    .replace(/[,:，、]+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  // If still too long, keep only the first phrase chunk.
+  if (value.length > 36) {
+    const chunk = value.split(/[，,、]/)[0]?.trim();
+    if (chunk) value = chunk;
+  }
+
+  // Hard length clamp.
+  const hasCJK = /[\u4e00-\u9fff]/.test(value);
+  const maxLen = hasCJK ? 32 : 72;
+  if (value.length > maxLen) {
+    value = value.slice(0, maxLen).trim();
+  }
+
+  return value || fallback;
+};
+
+export interface VisualStyleInferenceResult {
+  stylePrompt: string;
+  styleKeySuggestion?: PresetVisualStyleKey | 'custom';
+  styleLabel: string;
+  confidence?: number;
+  reason?: string;
+  rawResponse?: string;
+}
+
+/**
+ * Infer visual style from a reference image using OpenAI-compatible multimodal chat format.
+ * This sends request in `/v1/chat/completions` with `image_url`.
+ */
+export const inferVisualStyleFromImage = async (
+  imageDataOrUrl: string,
+  model: string = 'gpt-5.2',
+  language: string = 'Chinese',
+  abortSignal?: AbortSignal
+): Promise<VisualStyleInferenceResult> => {
+  const apiKey = checkApiKey('chat', model);
+  const requestModel = resolveRequestModel('chat', model);
+  const apiBase = getApiBase('chat', model);
+  const endpoint = '/v1/chat/completions';
+  const imageUrl = normalizeImageInput(imageDataOrUrl);
+
+  const requestBody = {
+    model: requestModel,
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a visual style classifier. Reply using strict JSON only.'
+      },
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text:
+              `Analyze the image and infer a reusable visual style prompt string.\n` +
+              `The style prompt should be a concise phrase focused on style only (not scene/camera/lighting/quality controls).\n` +
+              `Avoid resolution or control words like 4K, 8K, HDR, depth of field, composition, camera, scene.\n` +
+              `Prefer one short phrase (Chinese <= 18 chars or English <= 12 words).\n` +
+              `Also provide an optional preset suggestion using: anime, 2d-animation, 3d-animation, cyberpunk, oil-painting, live-action, or custom.\n` +
+              `Reply in ${language}.\n` +
+              `Return JSON only: {"stylePrompt":"...", "styleLabel":"...", "styleKeySuggestion":"...", "confidence":0-1, "reason":"..."}`
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: imageUrl
+            }
+          }
+        ]
+      }
+    ],
+    temperature: 0.1,
+    max_tokens: 300
+  };
+
+  const controller = new AbortController();
+  const handleExternalAbort = () => controller.abort();
+  if (abortSignal) {
+    if (abortSignal.aborted) {
+      controller.abort();
+    } else {
+      abortSignal.addEventListener('abort', handleExternalAbort);
+    }
+  }
+  const timeoutId = setTimeout(() => controller.abort(), 180000);
+
+  try {
+    const response = await retryOperation(async () => {
+      const res = await fetch(`${apiBase}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        throw await parseHttpError(res);
+      }
+      return res;
+    }, 2, 1200, controller.signal);
+
+    const data = await response.json();
+    const responseText = toChatMessageText(data?.choices?.[0]?.message?.content);
+
+    let parsed: any = {};
+    try {
+      parsed = JSON.parse(cleanJsonString(responseText));
+    } catch {
+      parsed = {};
+    }
+
+    const stylePromptRaw =
+      String(
+        parsed?.stylePrompt ||
+        parsed?.prompt ||
+        parsed?.visualStylePrompt ||
+        parsed?.styleDescription ||
+        parsed?.styleText ||
+        ''
+      ).trim() ||
+      String(parsed?.styleLabel || parsed?.styleName || '').trim() ||
+      responseText;
+    const stylePrompt = sanitizeStylePrompt(stylePromptRaw);
+
+    const styleKeyRaw = String(
+      parsed?.styleKeySuggestion ||
+      parsed?.styleKey ||
+      parsed?.style ||
+      parsed?.visualStyle ||
+      ''
+    ).trim();
+    const styleKey = normalizeStyleKey(styleKeyRaw);
+
+    const styleLabelCandidate =
+      String(parsed?.styleLabel || parsed?.styleName || parsed?.customStyle || '').trim();
+    const styleLabel =
+      styleLabelCandidate ||
+      (styleKey === 'custom'
+        ? (stylePrompt || 'Custom style')
+        : PRESET_VISUAL_STYLE_LABELS[styleKey as PresetVisualStyleKey]);
+
+    const confidenceNum = Number(parsed?.confidence);
+    const confidence = Number.isFinite(confidenceNum)
+      ? Math.max(0, Math.min(confidenceNum > 1 ? confidenceNum / 100 : confidenceNum, 1))
+      : undefined;
+
+    const reason = String(parsed?.reason || '').trim() || undefined;
+
+    return {
+      stylePrompt,
+      styleKeySuggestion: styleKey,
+      styleLabel,
+      confidence,
+      reason,
+      rawResponse: responseText
+    };
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      if (abortSignal?.aborted) {
+        throw new Error('Request cancelled');
+      }
+      throw new Error('Style inference timed out');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+    if (abortSignal) {
+      abortSignal.removeEventListener('abort', handleExternalAbort);
+    }
+  }
+};
+
 export const parseScriptStructure = async (
   rawText: string,
   language: string = '中文',

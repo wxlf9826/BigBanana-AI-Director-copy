@@ -1,5 +1,5 @@
-import React from 'react';
-import { BookOpen, Wand2, BrainCircuit, AlertCircle, ChevronRight } from 'lucide-react';
+import React, { useRef } from 'react';
+import { BookOpen, Wand2, BrainCircuit, AlertCircle, ChevronRight, ImagePlus } from 'lucide-react';
 import OptionSelector from './OptionSelector';
 import { DURATION_OPTIONS, LANGUAGE_OPTIONS, VISUAL_STYLE_OPTIONS, STYLES } from './constants';
 import ModelSelector from '../ModelSelector';
@@ -15,6 +15,7 @@ interface Props {
   customModelInput: string;
   customStyleInput: string;
   isProcessing: boolean;
+  isInferringVisualStyle?: boolean;
   error: string | null;
   onShowModelConfig?: () => void;
   onTitleChange: (value: string) => void;
@@ -25,6 +26,7 @@ interface Props {
   onCustomDurationChange: (value: string) => void;
   onCustomModelChange: (value: string) => void;
   onCustomStyleChange: (value: string) => void;
+  onInferVisualStyleByImage?: (file: File) => void;
   enableQualityCheck: boolean;
   onToggleQualityCheck: (value: boolean) => void;
   onAnalyze: () => void;
@@ -56,6 +58,7 @@ const ConfigPanel: React.FC<Props> = ({
   customModelInput,
   customStyleInput,
   isProcessing,
+  isInferringVisualStyle = false,
   error,
   onShowModelConfig,
   onTitleChange,
@@ -66,6 +69,7 @@ const ConfigPanel: React.FC<Props> = ({
   onCustomDurationChange,
   onCustomModelChange,
   onCustomStyleChange,
+  onInferVisualStyleByImage,
   enableQualityCheck,
   onToggleQualityCheck,
   onAnalyze,
@@ -76,6 +80,21 @@ const ConfigPanel: React.FC<Props> = ({
   const rawDurationValue = duration === 'custom' ? customDurationInput : duration;
   const parsedDurationSeconds = parseDurationToSeconds(rawDurationValue);
   const hasDurationInput = rawDurationValue.trim().length > 0;
+  const styleImageInputRef = useRef<HTMLInputElement | null>(null);
+  const canInferStyle = !!onInferVisualStyleByImage && !isProcessing && !isInferringVisualStyle;
+
+  const handleTriggerStyleUpload = () => {
+    styleImageInputRef.current?.click();
+  };
+
+  const handleStyleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && onInferVisualStyleByImage) {
+      onInferVisualStyleByImage(file);
+    }
+    // allow selecting the same file again
+    event.target.value = '';
+  };
 
   return (
     <div className="w-96 border-r border-[var(--border-primary)] flex flex-col bg-[var(--bg-primary)]">
@@ -174,6 +193,32 @@ const ConfigPanel: React.FC<Props> = ({
           customPlaceholder="输入风格（如 水彩、像素、写实）"
           gridCols={2}
         />
+
+        {onInferVisualStyleByImage && (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={handleTriggerStyleUpload}
+              disabled={!canInferStyle}
+              className={`w-full rounded-md border px-3 py-2 text-xs font-semibold transition-colors flex items-center justify-center gap-2 ${
+                canInferStyle
+                  ? 'border-[var(--border-secondary)] text-[var(--text-secondary)] hover:border-[var(--accent-border)] hover:text-[var(--text-primary)]'
+                  : STYLES.button.disabled
+              }`}
+            >
+              <ImagePlus className={`w-3.5 h-3.5 ${isInferringVisualStyle ? 'animate-pulse' : ''}`} />
+              {isInferringVisualStyle ? '正在反推风格...' : '上传图片反推风格'}
+            </button>
+            <input
+              ref={styleImageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleStyleImageChange}
+            />
+            <p className="text-[10px] text-[var(--text-muted)]">支持 OpenAI 格式多模态输入（image_url）。</p>
+          </div>
+        )}
 
         <div className="space-y-2">
           <label className={STYLES.label}>质量控制</label>
