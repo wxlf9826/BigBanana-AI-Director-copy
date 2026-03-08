@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { Readable } from 'node:stream';
 
 const SESSION_COOKIE_NAME = 'bigbanana_new_api_sid';
 const SESSION_TTL_SECONDS = Number.parseInt(process.env.NEW_API_PROXY_SESSION_TTL || '604800', 10);
@@ -476,6 +477,97 @@ const proxyAuthed = async (req, res, upstreamPath, options = {}) => {
   json(res, response.status || 200, payload);
 };
 
+const proxyAuthedMedia = async (req, res, targetUrl) => {
+  const local = requireAuthedSession(req, res);
+  if (!local) return;
+
+  const { session } = local;
+  if (!targetUrl) {
+    json(res, 400, { success: false, message: '缺少媒体地址', data: null });
+    return;
+  }
+
+  let endpointUrl;
+  let resolvedUrl;
+  try {
+    endpointUrl = new URL(session.endpoint);
+    resolvedUrl = new URL(targetUrl, session.endpoint);
+  } catch {
+    json(res, 400, { success: false, message: '媒体地址格式不正确', data: null });
+    return;
+  }
+
+  if (!['http:', 'https:'].includes(resolvedUrl.protocol)) {
+    json(res, 400, { success: false, message: '媒体地址协议不受支持', data: null });
+    return;
+  }
+
+  if (resolvedUrl.origin !== endpointUrl.origin) {
+    json(res, 403, { success: false, message: '仅支持预览当前 new-api 站点下的视频资源', data: null });
+    return;
+  }
+
+  const headers = {
+    Accept: req.headers.accept || '*/*',
+    ...(req.headers.range ? { Range: req.headers.range } : {}),
+  };
+
+  const cookieHeader = cookieJarToHeader(session.upstreamJar);
+  if (cookieHeader) {
+    headers.Cookie = cookieHeader;
+  }
+
+  if (session.user?.id) {
+    headers['New-Api-User'] = String(session.user.id);
+  }
+
+  const response = await fetch(resolvedUrl.toString(), {
+    method: req.method || 'GET',
+    headers,
+    redirect: 'follow',
+  });
+
+  mergeSetCookieIntoJar(session.upstreamJar, response);
+  updateLocalSession(local.sessionId, { upstreamJar: session.upstreamJar });
+
+  if ([401, 403].includes(response.status)) {
+    const payload = normalizeUpstreamEnvelope(response, await parseUpstreamJson(response));
+    if (!payload.success) {
+      destroyLocalSession(local.sessionId);
+      clearSessionCookie(req, res);
+    }
+    json(res, response.status || 200, payload);
+    return;
+  }
+
+  const passthroughHeaders = [
+    'content-type',
+    'content-length',
+    'content-range',
+    'accept-ranges',
+    'cache-control',
+    'etag',
+    'last-modified',
+    'content-disposition',
+  ];
+
+  passthroughHeaders.forEach((headerName) => {
+    const value = response.headers.get(headerName);
+    if (value) {
+      res.setHeader(headerName, value);
+    }
+  });
+
+  res.statusCode = response.status || 200;
+
+  if (!response.body) {
+    res.end();
+    return;
+  }
+
+  Readable.fromWeb(response.body).pipe(res);
+};
+
 export const createNewApiProxyHandler = () => {
   return async (req, res, next) => {
     const requestUrl = new URL(req.url || '/', 'http://localhost');
@@ -661,6 +753,11 @@ export const createNewApiProxyHandler = () => {
             end_timestamp: requestUrl.searchParams.get('end_timestamp'),
           })}`,
         );
+        return;
+      }
+
+      if (pathname === '/api/new-api/media' && req.method === 'GET') {
+        await proxyAuthedMedia(req, res, requestUrl.searchParams.get('url'));
         return;
       }
 

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Loader2, Search } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Copy, ExternalLink, Loader2, Search, X } from 'lucide-react';
 import { NewApiLog, NewApiLogStats, NewApiStatus, NewApiTask } from '../../services/newApiService';
 import { LogView } from './types';
 import { formatDateTime, formatQuota } from './utils';
@@ -186,14 +186,120 @@ export const LogsPanel: React.FC<LogsPanelProps> = ({
   onTaskSearch,
   onTaskPageChange,
 }) => {
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewRawUrl, setPreviewRawUrl] = useState('');
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
   const usageTotalPages = Math.max(1, Math.ceil(logTotal / logPageSize));
   const taskTotalPages = Math.max(1, Math.ceil(taskTotal / taskPageSize));
   const taskSuccessCount = tasks.filter((task) => String(task.status || '').toUpperCase() === 'SUCCESS').length;
   const taskFailureCount = tasks.filter((task) => String(task.status || '').toUpperCase() === 'FAILURE').length;
   const taskRunningCount = tasks.filter((task) => ['NOT_START', 'SUBMITTED', 'QUEUED', 'IN_PROGRESS'].includes(String(task.status || '').toUpperCase())).length;
+  const previewProxyUrl = useMemo(() => {
+    if (!previewRawUrl) return '';
+    return `/api/new-api/media?url=${encodeURIComponent(previewRawUrl)}`;
+  }, [previewRawUrl]);
+
+  const openVideoPreview = (rawUrl: string) => {
+    setPreviewRawUrl(rawUrl);
+    setPreviewUrl(`/api/new-api/media?url=${encodeURIComponent(rawUrl)}`);
+    setPreviewLoading(true);
+    setPreviewError(false);
+    setPreviewOpen(true);
+  };
+
+  const closeVideoPreview = () => {
+    setPreviewOpen(false);
+    setPreviewLoading(false);
+    setPreviewError(false);
+  };
+
+  const copyPreviewLink = async () => {
+    if (!previewProxyUrl || typeof navigator === 'undefined' || !navigator.clipboard) return;
+    await navigator.clipboard.writeText(`${window.location.origin}${previewProxyUrl}`);
+  };
 
   return (
     <div className="space-y-6">
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={closeVideoPreview}>
+          <div className="relative flex h-[80vh] w-full max-w-5xl flex-col rounded-3xl border border-[var(--border-primary)] bg-[var(--bg-primary)] shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[var(--border-primary)] px-5 py-4">
+              <div>
+                <div className="text-lg font-semibold text-[var(--text-primary)]">视频预览</div>
+                <div className="mt-1 max-w-[60vw] truncate text-xs text-[var(--text-tertiary)]" title={previewRawUrl}>{previewRawUrl}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void copyPreviewLink()}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-primary)] px-3 py-2 text-sm transition-colors hover:bg-[var(--bg-hover)]"
+                >
+                  <Copy className="h-4 w-4" /> 复制链接
+                </button>
+                <a
+                  href={previewProxyUrl || '#'}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-primary)] px-3 py-2 text-sm transition-colors hover:bg-[var(--bg-hover)]"
+                >
+                  <ExternalLink className="h-4 w-4" /> 新窗口打开
+                </a>
+                <button
+                  type="button"
+                  onClick={closeVideoPreview}
+                  className="inline-flex items-center justify-center rounded-xl border border-[var(--border-primary)] p-2 transition-colors hover:bg-[var(--bg-hover)]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="relative flex-1 bg-black">
+              {previewLoading && !previewError && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center text-white">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              )}
+
+              {previewError ? (
+                <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center text-white/85">
+                  <div className="text-lg font-medium">当前视频无法在页面内直接预览</div>
+                  <div className="max-w-2xl text-sm text-white/65">你可以尝试在新窗口打开；现在走的是带登录态的代理地址，通常可避免“未提供令牌”的报错。</div>
+                  <a
+                    href={previewProxyUrl || '#'}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
+                  >
+                    <ExternalLink className="h-4 w-4" /> 新窗口打开视频
+                  </a>
+                </div>
+              ) : (
+                <video
+                  key={previewUrl}
+                  src={previewUrl}
+                  controls
+                  playsInline
+                  className="h-full w-full"
+                  onLoadStart={() => {
+                    setPreviewLoading(true);
+                    setPreviewError(false);
+                  }}
+                  onLoadedData={() => setPreviewLoading(false)}
+                  onCanPlay={() => setPreviewLoading(false)}
+                  onError={() => {
+                    setPreviewLoading(false);
+                    setPreviewError(true);
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <SectionCard
         title={logView === 'usage' ? '使用日志' : '任务日志'}
         description={logView === 'usage'
@@ -427,8 +533,8 @@ export const LogsPanel: React.FC<LogsPanelProps> = ({
                             </span>
                           </td>
                           <td className="whitespace-nowrap px-4 py-3">{normalizeTaskAction(task.action)}</td>
-                          <td className="max-w-[260px] px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
-                            <div className="break-all">{task.task_id || '—'}</div>
+                          <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
+                            <div className="max-w-[320px] truncate whitespace-nowrap" title={task.task_id || '—'}>{task.task_id || '—'}</div>
                           </td>
                           <td className="whitespace-nowrap px-4 py-3">
                             <span className={`inline-flex rounded-full px-2.5 py-1 text-xs ${statusMeta.className}`}>
@@ -440,9 +546,13 @@ export const LogsPanel: React.FC<LogsPanelProps> = ({
                           </td>
                           <td className="px-4 py-3">
                             {resultUrl ? (
-                              <a className="text-[var(--accent)] hover:underline" href={resultUrl} target="_blank" rel="noreferrer">
-                                查看结果
-                              </a>
+                              <button
+                                type="button"
+                                className="text-[var(--accent)] hover:underline"
+                                onClick={() => openVideoPreview(resultUrl)}
+                              >
+                                点击预览视频
+                              </button>
                             ) : task.fail_reason ? (
                               <span className="block max-w-[240px] truncate text-rose-400" title={task.fail_reason}>
                                 {task.fail_reason}
