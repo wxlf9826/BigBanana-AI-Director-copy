@@ -231,7 +231,7 @@ const formatSubscriptionTime = (timestamp?: number) => {
 };
 
 const StatusPill: React.FC<{ active?: boolean; children: React.ReactNode }> = ({ active = false, children }) => (
-  <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs ${active ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-[var(--border-primary)] bg-[var(--bg-secondary)] text-[var(--text-tertiary)]'}`}>
+  <span className={`inline-flex items-center border px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider ${active ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-[var(--border-primary)] text-[var(--text-tertiary)]'}`}>
     {children}
   </span>
 );
@@ -310,10 +310,10 @@ export const BillingPanel: React.FC<BillingPanelProps> = ({
           <button
             onClick={() => void onRefreshProfile()}
             disabled={walletLoading}
-            className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border-primary)] px-4 py-2.5 text-sm transition-colors hover:border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-60"
+            className="flex items-center gap-2 px-4 py-3 border border-[var(--border-primary)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--border-secondary)] transition-colors disabled:opacity-60"
           >
-            {walletLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
-            刷新余额
+            {walletLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" />}
+            <span className="font-medium text-xs tracking-widest uppercase">刷新余额</span>
           </button>
         )}
       >
@@ -332,7 +332,7 @@ export const BillingPanel: React.FC<BillingPanelProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-4">
+              <div className="border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="text-base font-semibold text-[var(--text-primary)]">我的订阅</div>
@@ -345,9 +345,9 @@ export const BillingPanel: React.FC<BillingPanelProps> = ({
                     <button
                       onClick={() => void onRefreshSubscriptions()}
                       disabled={subscriptionLoading}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border-primary)] px-3 py-2 text-sm transition-colors hover:border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-60"
+                      className="flex items-center gap-2 border border-[var(--border-primary)] px-3 py-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--border-secondary)] transition-colors disabled:opacity-60"
                     >
-                      <RefreshCcw className={`h-4 w-4 ${subscriptionLoading ? 'animate-spin' : ''}`} />
+                      <RefreshCcw className={`w-4 h-4 ${subscriptionLoading ? 'animate-spin' : ''}`} />
                     </button>
                   </div>
                 </div>
@@ -422,10 +422,10 @@ export const BillingPanel: React.FC<BillingPanelProps> = ({
                     ];
 
                     return (
-                      <div key={plan.id} className={`flex h-full flex-col rounded-2xl border bg-[var(--bg-secondary)] p-5 ${isRecommended ? 'border-[var(--accent)] shadow-[0_0_0_1px_rgba(99,102,241,0.35)]' : 'border-[var(--border-primary)]'}`}>
+                      <div key={plan.id} className={`flex h-full flex-col border bg-[var(--bg-secondary)] p-5 ${isRecommended ? 'border-[var(--accent)] shadow-[0_0_0_1px_rgba(99,102,241,0.35)]' : 'border-[var(--border-primary)]'}`}>
                         <div className="min-h-[72px]">
                           <div className="flex flex-wrap items-center gap-2">
-                            {isRecommended && <span className="rounded-full bg-[var(--accent-bg)] px-2.5 py-1 text-xs text-[var(--accent-text)]">推荐</span>}
+                            {isRecommended && <span className="bg-[var(--accent-bg)] px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-[var(--accent-text)]">推荐</span>}
                             <div className="text-2xl font-semibold leading-tight text-[var(--text-primary)] break-words">{plan.title || '订阅套餐'}</div>
                           </div>
                           {plan.subtitle && <div className="mt-2 line-clamp-2 text-sm leading-6 text-[var(--text-tertiary)]">{plan.subtitle}</div>}
@@ -435,7 +435,7 @@ export const BillingPanel: React.FC<BillingPanelProps> = ({
                         {(originalRmbPrice !== null || discountText) && (
                           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-[var(--text-tertiary)]">
                             {originalRmbPrice !== null && <span className="line-through">原价 {formatRmbAmount(originalRmbPrice)}</span>}
-                            {discountText && <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-emerald-400">{discountText}</span>}
+                            {discountText && <span className="border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-mono text-emerald-400">{discountText}</span>}
                             <span>按 $1=¥{RMB_PER_USD_BENCHMARK} 计算</span>
                           </div>
                         )}
@@ -457,9 +457,9 @@ export const BillingPanel: React.FC<BillingPanelProps> = ({
                                   key={`${plan.id}-${method.key}`}
                                   onClick={() => void onSubscriptionPay(plan.id, method.key)}
                                   disabled={paymentLoading || reachedLimit}
-                                  className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border-primary)] px-4 py-2.5 text-sm transition-colors hover:border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-60"
+                                  className="flex items-center gap-2 border border-[var(--border-primary)] px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--border-secondary)] transition-colors disabled:opacity-60"
                                 >
-                                  {paymentLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+                                  {paymentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ExternalLink className="w-4 h-4" />}
                                   {reachedLimit ? '已达上限' : `${method.label}`}
                                 </button>
                               ))}
@@ -495,7 +495,7 @@ export const BillingPanel: React.FC<BillingPanelProps> = ({
                   <button
                     key={method.type}
                     onClick={() => setSelectedPaymentMethod(method.type)}
-                    className={`rounded-2xl border px-4 py-4 text-left transition-colors ${selectedPaymentMethod === method.type ? 'border-[var(--accent)] bg-[var(--accent-bg)]' : 'border-[var(--border-primary)] bg-[var(--bg-secondary)] hover:border-[var(--border-secondary)] hover:bg-[var(--bg-hover)]'}`}
+                    className={`border px-4 py-4 text-left transition-colors ${selectedPaymentMethod === method.type ? 'border-[var(--accent)] bg-[var(--accent-bg)]' : 'border-[var(--border-primary)] bg-[var(--bg-secondary)] hover:border-[var(--border-secondary)] hover:bg-[var(--bg-hover)]'}`}
                   >
                     <div className="font-semibold">{method.name}</div>
                     <div className="mt-1 text-xs text-[var(--text-tertiary)]">{method.type}</div>
@@ -514,7 +514,7 @@ export const BillingPanel: React.FC<BillingPanelProps> = ({
                       <button
                         key={amount}
                         onClick={() => setTopupAmount(String(amount))}
-                        className={`inline-flex min-h-[52px] min-w-[68px] flex-col items-center justify-center rounded-2xl border px-3 py-2 text-sm transition-colors ${isSelected ? 'border-[var(--accent)] bg-[var(--accent-bg)] text-[var(--accent-text)]' : 'border-[var(--border-primary)] text-[var(--text-secondary)] hover:border-[var(--border-secondary)] hover:text-[var(--text-primary)]'}`}
+                        className={`inline-flex min-h-[52px] min-w-[68px] flex-col items-center justify-center border px-3 py-2 text-sm transition-colors ${isSelected ? 'border-[var(--accent)] bg-[var(--accent-bg)] text-[var(--accent-text)]' : 'border-[var(--border-primary)] text-[var(--text-secondary)] hover:border-[var(--border-secondary)] hover:text-[var(--text-primary)]'}`}
                       >
                         <span className="leading-none">{`${normalizeDisplayAmount(amount)}$`}</span>
                         {discountLabel && (
@@ -533,12 +533,12 @@ export const BillingPanel: React.FC<BillingPanelProps> = ({
                   value={topupAmount}
                   onChange={(event) => setTopupAmount(event.target.value)}
                   placeholder="输入充值数量，例如 10"
-                  className="rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-3 outline-none transition-colors focus:border-[var(--accent)]"
+                  className="border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-3 outline-none transition-colors focus:border-[var(--accent)]"
                 />
                 <button
                   onClick={() => void onOnlinePay()}
                   disabled={paymentLoading || !hasPaymentMethod}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--btn-primary-bg)] px-4 py-3 text-sm font-medium text-[var(--btn-primary-text)] transition-colors hover:bg-[var(--btn-primary-hover)] disabled:opacity-60"
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[var(--btn-primary-bg)] text-[var(--btn-primary-text)] hover:bg-[var(--btn-primary-hover)] transition-colors text-xs font-bold uppercase tracking-widest disabled:opacity-60"
                 >
                   {paymentLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
                   立即支付
@@ -551,7 +551,7 @@ export const BillingPanel: React.FC<BillingPanelProps> = ({
                 </div>
               )}
 
-              <div className="rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-4">
+              <div className="border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-4">
                 <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
                   <span>预估支付金额</span>
                   {estimateLoading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -574,10 +574,10 @@ export const BillingPanel: React.FC<BillingPanelProps> = ({
                 href={status.top_up_link}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border-primary)] px-4 py-2.5 text-sm transition-colors hover:border-[var(--border-secondary)] hover:bg-[var(--bg-hover)]"
+                className="flex items-center gap-2 px-4 py-3 border border-[var(--border-primary)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--border-secondary)] transition-colors"
               >
-                <ExternalLink className="h-4 w-4" />
-                购买兑换码
+                <ExternalLink className="w-4 h-4" />
+                <span className="font-medium text-xs tracking-widest uppercase">购买兑换码</span>
               </a>
             ) : undefined}
           >
@@ -586,21 +586,21 @@ export const BillingPanel: React.FC<BillingPanelProps> = ({
                 value={redeemCode}
                 onChange={(event) => setRedeemCode(event.target.value)}
                 placeholder="输入兑换码"
-                className="w-full rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-3 outline-none transition-colors focus:border-[var(--accent)]"
+                className="w-full border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-3 outline-none transition-colors focus:border-[var(--accent)]"
               />
               <button
                 onClick={() => void onRedeemCode()}
                 disabled={paymentLoading}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--border-primary)] px-4 py-3 transition-colors hover:border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 px-4 py-3 border border-[var(--border-primary)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--border-secondary)] transition-colors disabled:opacity-60"
               >
-                {paymentLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-                立即兑换
+                {paymentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                <span className="font-bold text-xs tracking-widest uppercase">立即兑换</span>
               </button>
             </div>
           </SectionCard>
 
           <SectionCard title="使用提示" description="按下面步骤完成在线充值或兑换码兑换，金额会自动更新。">
-            <ul className="space-y-3 text-sm leading-6 text-[var(--text-secondary)]">
+            <ul className="space-y-3 text-xs leading-relaxed text-[var(--text-tertiary)]">
               <li>- 在线充值：先选择支付方式，再选择快捷金额或手动输入充值数量，确认无误后点击“立即支付”。</li>
               <li>- 金额说明：输入或切换充值数量后，下方“预估支付金额”会自动计算，无需额外操作。</li>
               <li>- 兑换码使用：已有兑换码时，直接在右上方输入兑换码并点击“立即兑换”。</li>

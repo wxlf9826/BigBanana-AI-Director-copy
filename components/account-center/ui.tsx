@@ -1,6 +1,6 @@
 import React from 'react';
 
-const baseCardClass = 'rounded-3xl border border-[var(--border-primary)] bg-[var(--bg-primary)] shadow-sm';
+const baseCardClass = 'border border-[var(--border-primary)] bg-[var(--bg-primary)]';
 
 export const cardClassName = baseCardClass;
 
@@ -17,8 +17,8 @@ export const SectionCard: React.FC<SectionCardProps> = ({ title, description, ac
     <section className={`${baseCardClass} p-6 ${className}`.trim()}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
-          {description && <p className="mt-1 text-sm text-[var(--text-tertiary)] leading-6">{description}</p>}
+          <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-widest">{title}</h2>
+          {description && <p className="mt-1 text-xs text-[var(--text-tertiary)] leading-relaxed">{description}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>
@@ -36,10 +36,10 @@ interface StatCardProps {
 
 export const StatCard: React.FC<StatCardProps> = ({ label, value, hint, valueClassName = '' }) => {
   return (
-    <div className="min-w-0 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-4">
-      <div className="text-xs uppercase tracking-[0.24em] text-[var(--text-tertiary)]">{label}</div>
-      <div className={`mt-3 min-w-0 text-xl font-semibold leading-tight text-[var(--text-primary)] sm:text-2xl ${valueClassName}`.trim()}>{value}</div>
-      {hint && <div className="mt-2 text-sm text-[var(--text-tertiary)] leading-6">{hint}</div>}
+    <div className="min-w-0 border border-[var(--border-primary)] bg-[var(--bg-secondary)] p-4">
+      <div className="flex items-center gap-2 text-[var(--text-muted)] mb-2"><span className="text-[10px] font-mono uppercase tracking-widest">{label}</span></div>
+      <div className={`min-w-0 text-2xl font-light text-[var(--text-primary)] ${valueClassName}`.trim()}>{value}</div>
+      {hint && <div className="mt-2 text-[10px] text-[var(--text-tertiary)] font-mono leading-relaxed">{hint}</div>}
     </div>
   );
 };
@@ -52,9 +52,9 @@ interface EmptyStateProps {
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ title, description, action }) => {
   return (
-    <div className="rounded-2xl border border-dashed border-[var(--border-primary)] bg-[var(--bg-secondary)] px-6 py-10 text-center">
-      <div className="text-base font-semibold text-[var(--text-primary)]">{title}</div>
-      <div className="mt-2 text-sm text-[var(--text-tertiary)] leading-6">{description}</div>
+    <div className="border border-dashed border-[var(--border-primary)] p-10 text-center text-[var(--text-muted)]">
+      <div className="text-sm font-bold text-[var(--text-primary)]">{title}</div>
+      <div className="mt-2 text-[10px] text-[var(--text-tertiary)] font-mono">{description}</div>
       {action && <div className="mt-5">{action}</div>}
     </div>
   );

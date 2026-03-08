@@ -677,25 +677,28 @@ const NewApiConsole: React.FC = () => {
   const currentTab = ACCOUNT_TABS.find((item) => item.key === activeTab) || ACCOUNT_TABS[0];
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
-      <div className="mx-auto max-w-7xl space-y-6 px-6 py-8">
-        <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-sm text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]">
-              <ArrowLeft className="h-4 w-4" /> 返回
+    <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-secondary)] p-8 md:p-12 font-sans selection:bg-[var(--selection-bg)]">
+      <div className="max-w-7xl mx-auto">
+        <header className="mb-16 border-b border-[var(--border-subtle)] pb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-xs font-mono uppercase tracking-wide text-[var(--text-tertiary)] hover:text-[var(--text-primary)] mb-6 group">
+              <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" /> 返回
             </button>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">账号中心</h1>
-              <p className="mt-2 text-sm text-[var(--text-tertiary)]">在这里管理登录、余额、令牌和使用记录。</p>
-            </div>
+            <h1 className="text-3xl font-light text-[var(--text-primary)] tracking-tight mb-2 flex items-center gap-3">
+              账号中心
+              <span className="text-[var(--text-muted)] text-lg">/</span>
+              <span className="text-[var(--text-muted)] text-sm font-mono tracking-widest uppercase">Account Center</span>
+            </h1>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <button onClick={() => void loadStatusAndSession(activeEndpoint)} className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border-primary)] px-4 py-2.5 text-sm transition-colors hover:border-[var(--border-secondary)] hover:bg-[var(--bg-hover)]">
-              {statusLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />} 刷新数据
+          <div className="flex flex-wrap items-center gap-3">
+            <button onClick={() => void loadStatusAndSession(activeEndpoint)} className="group flex items-center gap-2 px-4 py-3 border border-[var(--border-primary)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--border-secondary)] transition-colors">
+              {statusLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" />}
+              <span className="font-medium text-xs tracking-widest uppercase">刷新数据</span>
             </button>
             {session && (
-              <button onClick={() => void handleLogout()} disabled={authLoading} className="inline-flex items-center gap-2 rounded-2xl border border-rose-500/30 px-4 py-2.5 text-sm text-rose-400 transition-colors hover:bg-rose-500/10 disabled:opacity-60">
-                <Power className="h-4 w-4" /> 退出登录
+              <button onClick={() => void handleLogout()} disabled={authLoading} className="group flex items-center gap-2 px-4 py-3 border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 transition-colors disabled:opacity-60">
+                <Power className="w-4 h-4" />
+                <span className="font-medium text-xs tracking-widest uppercase">退出登录</span>
               </button>
             )}
           </div>
@@ -724,14 +727,14 @@ const NewApiConsole: React.FC = () => {
           </div>
         ) : (
           <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-            <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+            <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
               <div className={`${cardClassName} min-w-0 p-5`}>
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-bg)] text-[var(--accent-text)]"><User className="h-6 w-6" /></div>
-                <div className="mt-4 break-words text-lg font-semibold leading-tight">{session.username}</div>
-                <div className="mt-1 text-sm text-[var(--text-tertiary)]">已登录，可直接管理余额、令牌与日志</div>
+                <div className="w-12 h-12 border border-[var(--border-secondary)] flex items-center justify-center bg-[var(--accent-bg)] text-[var(--accent-text)]"><User className="w-6 h-6" /></div>
+                <div className="mt-4 break-words text-sm font-bold text-[var(--text-primary)] tracking-wide">{session.username}</div>
+                <div className="mt-1 text-[10px] text-[var(--text-tertiary)] font-mono">已登录，可直接管理余额、令牌与日志</div>
                 <div className="mt-5 grid gap-3">
-                  <div className="min-w-0 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-3"><div className="text-xs uppercase tracking-[0.24em] text-[var(--text-tertiary)]">余额</div><div className="mt-2 break-all text-lg font-semibold leading-tight sm:text-xl">{formatQuotaInUsd(session.user?.quota, status)}</div></div>
-                  <div className="min-w-0 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-3"><div className="text-xs uppercase tracking-[0.24em] text-[var(--text-tertiary)]">用户组</div><div className="mt-2 break-words text-sm font-medium text-[var(--text-secondary)]">{session.user?.group || '默认分组'}</div></div>
+                  <div className="min-w-0 border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-3"><div className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)]">余额</div><div className="mt-2 break-all text-2xl font-light text-[var(--text-primary)]">{formatQuotaInUsd(session.user?.quota, status)}</div></div>
+                  <div className="min-w-0 border border-[var(--border-primary)] bg-[var(--bg-secondary)] px-4 py-3"><div className="text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)]">用户组</div><div className="mt-2 break-words text-sm font-medium text-[var(--text-secondary)]">{session.user?.group || '默认分组'}</div></div>
                 </div>
               </div>
               <div className={`${cardClassName} p-3`}>
@@ -739,9 +742,9 @@ const NewApiConsole: React.FC = () => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.key;
                   return (
-                    <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex w-full items-start gap-3 rounded-2xl px-4 py-3 text-left transition-colors ${isActive ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'}`}>
-                      <Icon className="mt-0.5 h-5 w-5 shrink-0" />
-                      <span><span className="block font-medium">{tab.label}</span><span className={`mt-1 block text-xs leading-5 ${isActive ? 'text-[var(--accent-text)]/80' : 'text-[var(--text-tertiary)]'}`}>{tab.description}</span></span>
+                    <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors border-l-2 ${isActive ? 'border-[var(--text-primary)] bg-[var(--bg-hover)] text-[var(--text-primary)]' : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}>
+                      <Icon className={`mt-0.5 w-4 h-4 shrink-0 ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`} />
+                      <span><span className="block font-medium text-xs tracking-wider uppercase">{tab.label}</span><span className={`mt-1 block text-[10px] font-mono leading-5 ${isActive ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-muted)]'}`}>{tab.description}</span></span>
                     </button>
                   );
                 })}
@@ -750,7 +753,7 @@ const NewApiConsole: React.FC = () => {
 
             <main className="min-w-0 space-y-6">
               <SectionCard title={currentTab.label} description={currentTab.description}>
-                <div className="text-sm leading-6 text-[var(--text-tertiary)]">选择左侧模块，即可完成充值、密钥管理和用量查询。</div>
+                <div className="text-[10px] text-[var(--text-muted)] font-mono leading-relaxed">选择左侧模块，即可完成充值、密钥管理和用量查询。</div>
               </SectionCard>
 
               {activeTab === 'overview' && <OverviewPanel status={status} session={session} walletLoading={walletLoading} onRefreshProfile={refreshProfile} onTabChange={setActiveTab} />}

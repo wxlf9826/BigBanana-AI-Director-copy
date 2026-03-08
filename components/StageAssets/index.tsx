@@ -319,7 +319,7 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
     const scriptSnapshot = project.scriptData;
     if (!scriptSnapshot) return;
 
-    // 璁剧疆鐢熸垚鐘舵€?
+    // 设置生成状态
     updateProject(prev => {
       if (!prev.scriptData) return prev;
       const newData = cloneScriptData(prev.scriptData);
@@ -361,7 +361,7 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
             prompt = prompts.visualPrompt;
             negativePrompt = prompts.negativePrompt;
 
-            // 淇濆瓨鐢熸垚鐨勬彁绀鸿瘝
+            // 保存生成的提示词
             updateProject(prev => {
               if (!prev.scriptData) return prev;
               const newData = cloneScriptData(prev.scriptData);
@@ -393,7 +393,7 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
             prompt = prompts.visualPrompt;
             negativePrompt = prompts.negativePrompt;
 
-            // 淇濆瓨鐢熸垚鐨勬彁绀鸿瘝
+            // 保存生成的提示词
             updateProject(prev => {
               if (!prev.scriptData) return prev;
               const newData = cloneScriptData(prev.scriptData);
@@ -428,7 +428,7 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
         enhancedPrompt += shapeReferenceStyleInstruction;
       }
 
-      // 鐢熸垚鍥剧墖锛堜娇鐢ㄩ€夋嫨鐨勬í绔栧睆姣斾緥锛?
+      // 生成图片（使用选择的横竖屏比例）
       if (type === 'character' && characterReferenceImages.length > 0 && !shapeReferenceImage) {
         enhancedPrompt += '\n\nIMPORTANT IDENTITY LOCK: Use the provided references as the same character identity anchor. Keep face, hairstyle, body proportions, outfit materials, and signature accessories consistent. Do NOT redesign this character.';
         if (characterHasTurnaroundReference) {
@@ -455,7 +455,7 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
             : { referencePackType: 'scene' }
       );
 
-      // 鏇存柊鐘舵€?
+      // 更新状态
       updateProject(prev => {
         if (!prev.scriptData) return prev;
         const newData = cloneScriptData(prev.scriptData);
@@ -477,7 +477,7 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
 
     } catch (e: any) {
       console.error(e);
-      // 璁剧疆澶辫触鐘舵€?
+      // 设置失败状态
       updateProject(prev => {
         if (!prev.scriptData) return prev;
         const newData = cloneScriptData(prev.scriptData);
@@ -1014,7 +1014,7 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
     const scriptSnapshot = project.scriptData;
     if (!scriptSnapshot) return;
 
-    // 璁剧疆鐢熸垚鐘舵€?
+    // 设置生成状态
     updateProject(prev => {
       if (!prev.scriptData) return prev;
       const newData = cloneScriptData(prev.scriptData);
@@ -1083,7 +1083,7 @@ const StageAssets: React.FC<Props> = ({ project, updateProject, onApiKeyError, o
           : { referencePackType: 'prop' }
       );
 
-      // 鏇存柊鐘舵€?
+      // 更新状态
       updateProject(prev => {
         if (!prev.scriptData) return prev;
         const updatedData = cloneScriptData(prev.scriptData);
