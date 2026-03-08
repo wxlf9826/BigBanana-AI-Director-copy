@@ -677,9 +677,9 @@ const NewApiConsole: React.FC = () => {
   const currentTab = ACCOUNT_TABS.find((item) => item.key === activeTab) || ACCOUNT_TABS[0];
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-secondary)] p-8 md:p-12 font-sans selection:bg-[var(--selection-bg)]">
+    <div className="h-screen overflow-y-auto bg-[var(--bg-base)] text-[var(--text-secondary)] p-8 md:p-12 font-sans selection:bg-[var(--selection-bg)]">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-16 border-b border-[var(--border-subtle)] pb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <header className="mb-10 border-b border-[var(--border-subtle)] pb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-xs font-mono uppercase tracking-wide text-[var(--text-tertiary)] hover:text-[var(--text-primary)] mb-6 group">
               <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" /> 返回
@@ -705,7 +705,7 @@ const NewApiConsole: React.FC = () => {
         </header>
 
         {!session ? (
-          <div className="flex min-h-[calc(100vh-15rem)] items-center justify-center py-4">
+          <div className="flex items-center justify-center py-12">
             <div className="w-full max-w-2xl">
               <AuthView
                 status={status}
@@ -742,8 +742,8 @@ const NewApiConsole: React.FC = () => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.key;
                   return (
-                    <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors border-l-2 ${isActive ? 'border-[var(--text-primary)] bg-[var(--bg-hover)] text-[var(--text-primary)]' : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}>
-                      <Icon className={`mt-0.5 w-4 h-4 shrink-0 ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`} />
+                    <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors border-l-2 ${isActive ? 'border-[var(--accent)] bg-[var(--accent-bg)] text-[var(--text-primary)]' : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}>
+                      <Icon className={`mt-0.5 w-4 h-4 shrink-0 ${isActive ? 'text-[var(--accent-text)]' : 'text-[var(--text-muted)]'}`} />
                       <span><span className="block font-medium text-xs tracking-wider uppercase">{tab.label}</span><span className={`mt-1 block text-[10px] font-mono leading-5 ${isActive ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-muted)]'}`}>{tab.description}</span></span>
                     </button>
                   );

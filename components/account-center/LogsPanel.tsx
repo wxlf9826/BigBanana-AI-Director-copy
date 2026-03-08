@@ -430,8 +430,6 @@ export const LogsPanel: React.FC<LogsPanelProps> = ({
                       <th className="px-4 py-3 text-left text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)]">提交时间</th>
                       <th className="px-4 py-3 text-left text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)]">完成时间</th>
                       <th className="px-4 py-3 text-left text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)]">耗时</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)]">平台</th>
-                      <th className="px-4 py-3 text-left text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)]">类型</th>
                       <th className="px-4 py-3 text-left text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)]">任务 ID</th>
                       <th className="px-4 py-3 text-left text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)]">任务状态</th>
                       <th className="px-4 py-3 text-left text-[10px] font-mono uppercase tracking-widest text-[var(--text-muted)]">进度</th>
@@ -449,12 +447,6 @@ export const LogsPanel: React.FC<LogsPanelProps> = ({
                           <td className="whitespace-nowrap px-4 py-3">{formatDateTime(task.submit_time)}</td>
                           <td className="whitespace-nowrap px-4 py-3">{formatDateTime(task.finish_time)}</td>
                           <td className="whitespace-nowrap px-4 py-3">{formatTaskDuration(task.submit_time, task.finish_time)}</td>
-                          <td className="whitespace-nowrap px-4 py-3">
-                            <span className="border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-mono text-emerald-400">
-                              {normalizePlatform(task.platform)}
-                            </span>
-                          </td>
-                          <td className="whitespace-nowrap px-4 py-3">{normalizeTaskAction(task.action)}</td>
                           <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
                             <div className="max-w-[320px] truncate whitespace-nowrap" title={taskId}>{taskId}</div>
                           </td>
