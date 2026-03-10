@@ -801,10 +801,14 @@ const dataUrlToImageFile = (dataUrl: string, filename: string): File | null => {
 const extractImageFromOpenAiResponse = (response: any): string | null => {
   const first = response?.data?.[0];
   if (!first) return null;
-  if (first.b64_json) {
+  
+  const b64Data = first.b64_json || first.base64;
+  if (b64Data) {
     const format = first.output_format || OPENAI_IMAGE_OUTPUT_FORMAT;
-    return `data:image/${format};base64,${first.b64_json}`;
+    const prefix = b64Data.startsWith('data:') ? '' : `data:image/${format};base64,`;
+    return `${prefix}${b64Data}`;
   }
+  
   if (first.url) {
     return String(first.url);
   }
